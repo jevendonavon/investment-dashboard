@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Alert Notifications -->
+<div id="alert-notifications"></div>
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="fw-bold">Welcome back, <span style="color: #00d4aa;">{{ current_user.username }}</span>!</h2>
+        <p class="text-muted">Here's your investment overview.</p>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card p-4 text-center">
+            <i class="fas fa-star fa-2x mb-2" style="color: #00d4aa;"></i>
+            <h6 class="text-muted">Watchlist</h6>
+            <h3 class="fw-bold">0</h3>
+            <small class="text-muted">Stocks tracked</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-4 text-center">
+            <i class="fas fa-newspaper fa-2x mb-2" style="color: #00d4aa;"></i>
+            <h6 class="text-muted">News</h6>
+            <h3 class="fw-bold">Live</h3>
+            <small class="text-muted">Financial updates</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-4 text-center">
+            <i class="fas fa-calculator fa-2x mb-2" style="color: #00d4aa;"></i>
+            <h6 class="text-muted">Calculators</h6>
+            <h3 class="fw-bold">3</h3>
+            <small class="text-muted">Tools available</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-4 text-center">
+            <i class="fas fa-user fa-2x mb-2" style="color: #00d4aa;"></i>
+            <h6 class="text-muted">Account</h6>
+            <h3 class="fw-bold">Active</h3>
+            <small class="text-muted">{{ current_user.email }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <i class="fas fa-star fa-3x mb-3" style="color: #00d4aa;"></i>
+            <h5 class="fw-bold">My Watchlist</h5>
+            <p class="text-muted small">Track your favorite stocks with near real-time prices.</p>
+            <a href="/watchlist" class="btn btn-primary">Go to Watchlist</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <i class="fas fa-newspaper fa-3x mb-3" style="color: #00d4aa;"></i>
+            <h5 class="fw-bold">Financial News</h5>
+            <p class="text-muted small">Stay updated with the latest market news.</p>
+            <a href="/news" class="btn btn-primary">Read News</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 text-center">
+            <i class="fas fa-calculator fa-3x mb-3" style="color: #00d4aa;"></i>
+            <h5 class="fw-bold">Calculators</h5>
+            <p class="text-muted small">Calculate returns, compound interest and loans.</p>
+            <a href="/calculator" class="btn btn-primary">Use Calculators</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function checkAlerts() {
+    fetch('/api/alerts/check')
+        .then(res => res.json())
+        .then(triggered => {
+            const container = document.getElementById('alert-notifications');
+            container.innerHTML = '';
+            triggered.forEach(alert => {
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="fas fa-bell me-2"></i>
+                        <strong>Price Alert!</strong> 
+                        ${alert.symbol} has gone ${alert.direction} your target of 
+                        $${alert.target_price.toFixed(2)} — 
+                        Current price: <strong>$${alert.current_price.toFixed(2)}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`);
+            });
+            
+            // Auto-dismiss after 5 seconds with smooth fade
+            setTimeout(() => {
+                document.querySelectorAll('#alert-notifications .alert').forEach(el => {
+                    el.classList.add('fade-out');
+                    setTimeout(() => {
+                        const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+                        bsAlert.close();
+                    }, 1000);
+                });
+            }, 5000);
+        });
+}
+
+    // Check alerts every 60 seconds
+    checkAlerts();
+    setInterval(checkAlerts, 60000);
+</script>
+{% endblock %}

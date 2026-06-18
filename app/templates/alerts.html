@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="section-title">Price <span style="color: var(--accent);">Alerts</span></h2>
+        <p class="text-muted">Get notified when a stock hits your target price.</p>
+    </div>
+</div>
+
+<!-- Add Alert Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <input type="text" id="alert-symbol" class="form-control" placeholder="Symbol (e.g. AAPL)">
+            </div>
+            <div class="col-md-3">
+                <select id="alert-direction" class="form-select">
+                    <option value="above">Price goes above</option>
+                    <option value="below">Price goes below</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="number" id="alert-price" class="form-control" placeholder="Target price ($)">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100" onclick="addAlert()"><i class="fas fa-bell me-1"></i>Set Alert</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Table -->
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Condition</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="alerts-body">
+                <tr id="empty-row"><td colspan="4" class="text-center text-muted py-4">No alerts set yet.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function loadAlerts() {
+        fetch('/api/alerts')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('alerts-body').innerHTML = '';
+                if (data.length === 0) {
+                    document.getElementById('alerts-body').innerHTML = '<tr id="empty-row"><td colspan="4" class="text-center text-muted py-4">No alerts set yet.</td></tr>';
+                    return;
+                }
+                data.forEach(alert => {
+                    const condition = alert.direction === 'above'
+                        ? `Above $${alert.target_price.toFixed(2)}`
+                        : `Below $${alert.target_price.toFixed(2)}`;
+                    const status = alert.triggered
+                        ? '<span class="badge" style="background-color: var(--gold); color:#0B0E14;"><i class="fas fa-check-circle me-1"></i>Triggered</span>'
+                        : '<span class="badge" style="background-color: var(--accent); color:#0B0E14;"><i class="fas fa-clock me-1"></i>Active</span>';
+
+                    document.getElementById('alerts-body').insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td><strong>${alert.symbol}</strong></td>
+                            <td>${condition}</td>
+                            <td>${status}</td>
+                            <td><button class="btn btn-sm btn-danger" onclick="removeAlert(${alert.id})">Remove</button></td>
+                        </tr>`);
+                });
+            });
+    }
+
+    function addAlert() {
+        const symbol = document.getElementById('alert-symbol').value.toUpperCase().trim();
+        const direction = document.getElementById('alert-direction').value;
+        const price = document.getElementById('alert-price').value;
+
+        if (!symbol || !price) return alert('Please fill in all fields!');
+
+        fetch('/api/alerts/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({symbol: symbol, direction: direction, target_price: price})
+        })
+        .then(res => res.json())
+        .then(() => {
+            document.getElementById('alert-symbol').value = '';
+            document.getElementById('alert-price').value = '';
+            loadAlerts();
+        });
+    }
+
+    function removeAlert(id) {
+        fetch('/api/alerts/remove', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        })
+        .then(res => res.json())
+        .then(() => loadAlerts());
+    }
+
+    loadAlerts();
+</script>
+{% endblock %}

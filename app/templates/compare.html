@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="section-title">Stock <span style="color: var(--accent);">Comparison</span></h2>
+        <p class="text-muted">Compare up to 3 stocks side by side.</p>
+    </div>
+</div>
+
+<!-- Input Fields -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <input type="text" id="symbol1" class="form-control" placeholder="e.g. AAPL">
+    </div>
+    <div class="col-md-3">
+        <input type="text" id="symbol2" class="form-control" placeholder="e.g. TSLA">
+    </div>
+    <div class="col-md-3">
+        <input type="text" id="symbol3" class="form-control" placeholder="e.g. MSFT (optional)">
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-primary w-100" onclick="compareStocks()"><i class="fas fa-balance-scale me-1"></i>Compare</button>
+    </div>
+</div>
+
+<!-- Comparison Table -->
+<div class="card mb-4 d-none" id="comparison-card">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th id="head1"></th>
+                    <th id="head2"></th>
+                    <th id="head3"></th>
+                </tr>
+            </thead>
+            <tbody id="comparison-body">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="best-performer" class="text-center mt-3 d-none">
+    <span class="badge p-2" style="background-color: var(--gold); color: #0B0E14; font-size: 0.9rem;">
+        <i class="fas fa-trophy me-1"></i> <span id="best-performer-text"></span>
+    </span>
+</div>
+
+<!-- Combined Chart -->
+<div class="card d-none" id="chart-card">
+    <div class="card-body p-0">
+        <div id="comparison-chart" style="height: 450px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://s3.tradingview.com/tv.js"></script>
+<script>
+    function compareStocks() {
+        const s1 = document.getElementById('symbol1').value.toUpperCase().trim();
+        const s2 = document.getElementById('symbol2').value.toUpperCase().trim();
+        const s3 = document.getElementById('symbol3').value.toUpperCase().trim();
+
+        const symbols = [s1, s2, s3].filter(s => s !== '');
+        if (symbols.length < 2) {
+            alert('Please enter at least 2 stock symbols!');
+            return;
+        }
+
+        Promise.all(symbols.map(s => fetch(`/api/stock-price?symbol=${s}`).then(r => r.json())))
+            .then(results => {
+                document.getElementById('comparison-card').classList.remove('d-none');
+                document.getElementById('chart-card').classList.remove('d-none');
+
+                const headers = ['head1', 'head2', 'head3'];
+                headers.forEach((id, i) => {
+                    document.getElementById(id).textContent = symbols[i] || '';
+                });
+                if (symbols.length < 3) document.getElementById('head3').textContent = '';
+
+                const rows = [
+                    { label: 'Current Price', key: 'c', prefix: '$' },
+                    { label: 'Change', key: 'd', prefix: '$' },
+                    { label: 'Change %', key: 'dp', suffix: '%' },
+                    { label: 'High (Day)', key: 'h', prefix: '$' },
+                    { label: 'Low (Day)', key: 'l', prefix: '$' },
+                    { label: 'Open', key: 'o', prefix: '$' },
+                    { label: 'Previous Close', key: 'pc', prefix: '$' },
+                ];
+
+                let html = '';
+                rows.forEach(row => {
+                    html += `<tr><td class="text-muted">${row.label}</td>`;
+                    for (let i = 0; i < 3; i++) {
+                        if (i < results.length) {
+                            const val = results[i][row.key];
+                            const isChange = row.key === 'd' || row.key === 'dp';
+                            const color = isChange ? (val >= 0 ? 'var(--accent)' : 'var(--danger)') : 'var(--text-color)';
+                            html += `<td style="color:${color}"><strong>${row.prefix || ''}${val !== undefined ? val.toFixed(2) : 'N/A'}${row.suffix || ''}</strong></td>`;
+                        } else {
+                            html += `<td></td>`;
+                        }
+                    }
+                    html += `</tr>`;
+                });
+                document.getElementById('comparison-body').innerHTML = html;
+                // Find best performer by change %
+                let bestIdx = 0;
+                let bestVal = results[0].dp || -Infinity;
+                results.forEach((r, i) => {
+                    if ((r.dp || -Infinity) > bestVal) {
+                        bestVal = r.dp;
+                        bestIdx = i;
+                    }
+                });
+                document.getElementById('best-performer').classList.remove('d-none');
+                document.getElementById('best-performer-text').textContent = `${symbols[bestIdx]} is leading today with ${bestVal.toFixed(2)}% change`;
+                // Build comparison chart with first symbol as base, others as compare
+                document.getElementById('comparison-chart').innerHTML = '';
+                new TradingView.widget({
+                    "container_id": "comparison-chart",
+                    "symbol": symbols[0],
+                    "width": "100%",
+                    "height": 450,
+                    "interval": "D",
+                    "timezone": "Etc/UTC",
+                    "theme": document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
+                    "style": "1",
+                    "locale": "en",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "allow_symbol_change": false,
+                    "compareSymbols": symbols.slice(1).map(s => ({ "symbol": s, "position": "SameScale" }))
+                });
+            });
+    }
+</script>
+{% endblock %}

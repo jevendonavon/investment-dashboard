@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="fw-bold">Financial <span style="color: #00d4aa;">Calculators</span></h2>
+        <p class="text-muted">Use our tools to make smarter financial decisions.</p>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-4" id="calculatorTabs">
+    <li class="nav-item">
+        <button class="nav-link active" onclick="showTab('stock')">Stock Return</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" onclick="showTab('compound')">Compound Interest</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" onclick="showTab('loan')">Loan Calculator</button>
+    </li>
+</ul>
+
+<!-- Stock Return Calculator -->
+<div id="stock-tab" class="calc-tab">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4"><i class="fas fa-chart-line me-2" style="color: #00d4aa;"></i>Stock Return Calculator</h5>
+                <div class="mb-3">
+                    <label class="form-label">Buy Price ($)</label>
+                    <input type="number" id="buy-price" class="form-control" placeholder="e.g. 100">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Sell Price ($)</label>
+                    <input type="number" id="sell-price" class="form-control" placeholder="e.g. 150">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Number of Shares</label>
+                    <input type="number" id="shares" class="form-control" placeholder="e.g. 10">
+                </div>
+                <button class="btn btn-primary w-100" onclick="calcStock()">Calculate</button>
+                <div id="stock-result" class="mt-4 d-none">
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">Profit / Loss</small>
+                            <h4 id="stock-profit" class="fw-bold"></h4>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Return %</small>
+                            <h4 id="stock-return" class="fw-bold"></h4>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Total Value</small>
+                            <h4 id="stock-total" class="fw-bold"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compound Interest Calculator -->
+<div id="compound-tab" class="calc-tab d-none">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4"><i class="fas fa-percentage me-2" style="color: #00d4aa;"></i>Compound Interest Calculator</h5>
+                <div class="mb-3">
+                    <label class="form-label">Principal Amount ($)</label>
+                    <input type="number" id="principal" class="form-control" placeholder="e.g. 10000">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Annual Interest Rate (%)</label>
+                    <input type="number" id="rate" class="form-control" placeholder="e.g. 8">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Years</label>
+                    <input type="number" id="years" class="form-control" placeholder="e.g. 10">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Compound Frequency</label>
+                    <select id="frequency" class="form-select">
+                        <option value="1">Annually</option>
+                        <option value="4">Quarterly</option>
+                        <option value="12" selected>Monthly</option>
+                        <option value="365">Daily</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary w-100" onclick="calcCompound()">Calculate</button>
+                <div id="compound-result" class="mt-4 d-none">
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">Future Value</small>
+                            <h4 id="compound-future" class="fw-bold"></h4>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Total Interest</small>
+                            <h4 id="compound-interest" class="fw-bold"></h4>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Total Return %</small>
+                            <h4 id="compound-return" class="fw-bold"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loan Calculator -->
+<div id="loan-tab" class="calc-tab d-none">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4"><i class="fas fa-hand-holding-usd me-2" style="color: #00d4aa;"></i>Loan Calculator</h5>
+                <div class="mb-3">
+                    <label class="form-label">Loan Amount ($)</label>
+                    <input type="number" id="loan-amount" class="form-control" placeholder="e.g. 50000">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Annual Interest Rate (%)</label>
+                    <input type="number" id="loan-rate" class="form-control" placeholder="e.g. 5">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Loan Term (Years)</label>
+                    <input type="number" id="loan-years" class="form-control" placeholder="e.g. 5">
+                </div>
+                <button class="btn btn-primary w-100" onclick="calcLoan()">Calculate</button>
+                <div id="loan-result" class="mt-4 d-none">
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">Monthly Payment</small>
+                            <h4 id="loan-monthly" class="fw-bold"></h4>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Total Payment</small>
+                            <h4 id="loan-total" class="fw-bold"></h4>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Total Interest</small>
+                            <h4 id="loan-interest" class="fw-bold"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showTab(tab) {
+        document.querySelectorAll('.calc-tab').forEach(t => t.classList.add('d-none'));
+        document.getElementById(tab + '-tab').classList.remove('d-none');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function calcStock() {
+        const buy = parseFloat(document.getElementById('buy-price').value);
+        const sell = parseFloat(document.getElementById('sell-price').value);
+        const shares = parseFloat(document.getElementById('shares').value);
+        if (!buy || !sell || !shares) return alert('Please fill in all fields!');
+        const profit = (sell - buy) * shares;
+        const returnPct = ((sell - buy) / buy) * 100;
+        const total = sell * shares;
+        document.getElementById('stock-profit').textContent = '$' + profit.toFixed(2);
+        document.getElementById('stock-profit').style.color = profit >= 0 ? '#00d4aa' : '#dc3545';
+        document.getElementById('stock-return').textContent = returnPct.toFixed(2) + '%';
+        document.getElementById('stock-return').style.color = returnPct >= 0 ? '#00d4aa' : '#dc3545';
+        document.getElementById('stock-total').textContent = '$' + total.toFixed(2);
+        document.getElementById('stock-result').classList.remove('d-none');
+    }
+
+    function calcCompound() {
+        const p = parseFloat(document.getElementById('principal').value);
+        const r = parseFloat(document.getElementById('rate').value) / 100;
+        const t = parseFloat(document.getElementById('years').value);
+        const n = parseFloat(document.getElementById('frequency').value);
+        if (!p || !r || !t) return alert('Please fill in all fields!');
+        const future = p * Math.pow(1 + r/n, n*t);
+        const interest = future - p;
+        const returnPct = (interest / p) * 100;
+        document.getElementById('compound-future').textContent = '$' + future.toFixed(2);
+        document.getElementById('compound-interest').textContent = '$' + interest.toFixed(2);
+        document.getElementById('compound-return').textContent = returnPct.toFixed(2) + '%';
+        document.getElementById('compound-result').classList.remove('d-none');
+    }
+
+    function calcLoan() {
+        const p = parseFloat(document.getElementById('loan-amount').value);
+        const r = parseFloat(document.getElementById('loan-rate').value) / 100 / 12;
+        const n = parseFloat(document.getElementById('loan-years').value) * 12;
+        if (!p || !r || !n) return alert('Please fill in all fields!');
+        const monthly = p * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+        const total = monthly * n;
+        const interest = total - p;
+        document.getElementById('loan-monthly').textContent = '$' + monthly.toFixed(2);
+        document.getElementById('loan-total').textContent = '$' + total.toFixed(2);
+        document.getElementById('loan-interest').textContent = '$' + interest.toFixed(2);
+        document.getElementById('loan-result').classList.remove('d-none');
+    }
+</script>
+{% endblock %}
